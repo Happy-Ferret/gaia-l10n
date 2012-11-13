@@ -7,12 +7,13 @@ cd $HGBASE
 
 if [[ -z "$1" ]]
 then
-    echo "Usage: $0 [import|export]"
+    echo "Usage: $0 [import|export|ini]"
     echo 
     echo "  import                    Import en-US properties files from git."
     echo "  export [LOCALE...]        Export specified locale's properties"
     echo "                            files to git.  If no locale is given"
     echo "                            export ar, fr and zh-TW."
+    echo "  ini [LOCALE...]           Add LOCALE to *.ini files for all apps"
     echo 
     echo "The import command uses jq.  Download from http://stedolan.github.com/jq/"
     exit 1
@@ -62,3 +63,42 @@ then
     done
     exit 0
 fi
+
+if [[ "$1" == "ini" ]]
+then
+    args=("$@")
+    locales=${args[@]:1}
+
+    if [[ -z $locales ]]
+    then
+        locales=( ar fr zh-TW )
+    fi
+
+    for ini in $(find .. -name "*.ini")
+    do
+        if [[ -z $(grep "en-US.properties" $ini) ]]
+        then
+            continue
+        fi
+        for loc in $locales
+        do
+            if [[ -z $(grep "\[$loc\]" $ini) ]]
+            then
+                echo "[$loc] section is missing; adding..."
+                echo "[$loc]" >> $ini
+            fi
+            import_en=$(grep "en-US.properties" $ini)
+            import_loc=${import_en/en-US/$loc}
+            if [[ -z $(grep "$import_loc" $ini) ]]
+            then
+                _tmp=$(mktemp)
+                sed "/\[$loc\]/a $import_loc" $ini > $_tmp
+                mv $_tmp $ini
+            else
+                echo "$import_loc already in $ini"
+            fi
+        done
+    done
+    exit 0
+fi
+
