@@ -92,7 +92,7 @@ then
             if [[ -z $(grep "$import_loc" $ini) ]]
             then
                 _tmp=$(mktemp)
-                sed "/\[$loc\]/a $import_loc" $ini > $_tmp
+                sed "/\[$loc\]/a $import_loc\n" $ini > "$_tmp"
                 mv $_tmp $ini
             else
                 echo "$import_loc already in $ini"
